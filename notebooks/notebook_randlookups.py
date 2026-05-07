@@ -39,6 +39,7 @@ import cyberbattle.agents.baseline.plotting as p
 import cyberbattle.agents.baseline.agent_wrapper as w
 from cyberbattle.agents.baseline.agent_wrapper import Verbosity
 from cyberbattle._env.cyberbattle_env import CyberBattleEnv
+print(sys.path)
 
 # %%
 # %matplotlib inline
