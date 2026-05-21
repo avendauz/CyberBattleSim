@@ -684,7 +684,7 @@ class DefenderAgentActions:
     # Number of steps it takes to completely reimage a node
     REIMAGING_DURATION = 15
 
-    def __init__(self, environment: model.Environment):
+    def __init__(self, environment: model.Environment, attacker_actions: AgentActions, bound: int):
         # map nodes being reimaged to the remaining number of steps to completion
         self.node_reimaging_progress: Dict[model.NodeID, int] = dict()
 
@@ -692,10 +692,26 @@ class DefenderAgentActions:
         self.__network_availability: float = 1.0
 
         self._environment = environment
+        self._attacker_actions = attacker_actions
 
+        # OL defines an upper-bound, natural cost n for a certain strategy
+        self._defense_bound = bound
     @property
     def network_availability(self):
         return self.__network_availability
+
+    def get_vulnerable_nodes(self):
+        """Find possible vulnerable neighbours for which an attacker can exploits in order to ensure FAILED attacks and exploits, including discovery
+
+        in OATL, we assume the defender has perfect knowledge of the state in which the attacker is in, so we'll use perfect knowledge of owned nodes
+
+
+        Perfect knowledge of CGS means we need to know all the possible transitions that could be made, which correspond to all possible plays the Attacker can make satisfying all preconditions, for certain paths taken in the attack graph
+
+        """
+
+        return self._attacker_actions.list_nodes()
+
 
     def reimage_node(self, node_id: model.NodeID):
         """Re-image a computer node"""

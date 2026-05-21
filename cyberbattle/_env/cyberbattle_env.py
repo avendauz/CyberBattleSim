@@ -383,7 +383,7 @@ class CyberBattleEnv(CyberBattleSpaceKind):
             self.__environment,
             throws_on_invalid_actions=self.__throws_on_invalid_actions,
         )
-        self._defender_actuator = actions.DefenderAgentActions(self.__environment)
+        self._defender_actuator = actions.DefenderAgentActions(self.__environment, self._actuator)
 
         self.__stepcount = 0
         self.__start_time = time.time()

@@ -272,6 +272,19 @@ def actions_on_simple_environment() -> actions.AgentActions:
     )
     return actions.AgentActions(env)
 
+def test_print():
+    testPrint = actions.AgentActions(model.Environment(
+        network=model.create_network(NODES),
+        version=model.VERSION_TAG,
+        vulnerability_library=SAMPLE_VULNERABILITIES,
+        identifiers=ENV_IDENTIFIERS,
+        creationTime=datetime.utcnow(),
+        lastModified=datetime.utcnow(),
+    ))
+    print(testPrint.list_nodes())
+
+    testPrint.print_all_attacks()
+    assert False
 
 def test_list_vulnerabilities_function(actions_on_single_node_environment: Fixture, actions_on_simple_environment: Fixture) -> None:
     """
@@ -420,3 +433,9 @@ def test_check_prerequisites(actions_on_simple_environment: Fixture) -> None:
     # testing on a node/vuln combo which should give us a positive reuslt.
     result = actions_on_simple_environment._check_prerequisites("dc", SAMPLE_VULNERABILITIES["UACME61"])
     assert result
+
+def test_defender(actions_on_simple_environment: Fixture) -> None:
+    defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
+    print(actions_on_simple_environment.list_nodes())
+    print(defender.get_vulnerable_nodes())
+    assert False

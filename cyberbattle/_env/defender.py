@@ -22,7 +22,16 @@ class DefenderAgent:
     @abstractmethod
     def step(self, environment: Environment, actions: DefenderAgentActions, t: int):
         return None
+class Demon(DefenderAgent):
+    """
+    Give defender ability to change node connections.
+    1) must be done before the attacker has ability to move
+    2) must alter possible vulnerabilities?
+    if we alter preconditions like leaked-nodes id, will this prevent the attacker to access it?
 
+    """
+    def step(self, environment: Environment, actions: DefenderAgentActions, t: int):
+        logging.info("This is the demon")
 
 class ScanAndReimageCompromisedMachines(DefenderAgent):
     """A defender agent that scans a subset of network nodes

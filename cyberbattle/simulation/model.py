@@ -242,7 +242,7 @@ class VulnerabilityInfo(NamedTuple):
     # some cost associated with exploiting this vulnerability (e.g.
     # brute force more costly than dumping credentials)
     cost: float = 1.0
-    # a string displayed when the vulnerability is successfully exploited
+    # a string disp-layed when the vulnerability is successfully exploited
     reward_string: str = ""
 
 
@@ -375,7 +375,7 @@ def iterate_network_nodes(network: nx.graph.Graph) -> Iterator[Tuple[NodeID, Nod
 #     _adjdict: *id018
 #     _graph: *id019
 @dataclass
-class Environment:
+class   Environment:
     """The static graph defining the network of computers"""
 
     network: nx.DiGraph
