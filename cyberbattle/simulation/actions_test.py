@@ -441,7 +441,8 @@ def test_check_prerequisites(actions_on_simple_environment: Fixture) -> None:
 
 def test_vulnerablity_edge_add(actions_on_simple_environment: Fixture) -> None:
     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
-    defender.identify_vulnerable_neighbour()
+    for k, info in defender.get_vulnerable_nodes():
+        defender.identify_vulnerable_neighbour(k,info)
     assert defender.get_vulnerability_graph().has_edge("a", "b")
     assert defender.get_vulnerability_graph().has_edge("a", "c")
     assert defender.get_vulnerability_graph().has_edge("a", "dc")

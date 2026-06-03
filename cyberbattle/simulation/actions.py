@@ -725,15 +725,14 @@ class DefenderAgentActions:
     def get_vulnerability_graph(self):
         return self.vulnerability_graph
 
-    def identify_vulnerable_neighbour(self):
+    def identify_vulnerable_neighbour(self, k, info):
         pairs = []
-        for k,info in self.get_vulnerable_nodes():
-            vulns = info.vulnerabilities.items()
-            for i,v in vulns:
-                ts = self.extract_vulnerability_targets(v)
-                for t in ts:
-                    self.get_vulnerability_graph().add_edge(k, t, weight=45)
-                    pairs.append((k,t))
+        vulns = info.vulnerabilities.items()
+        for i,v in vulns:
+            ts = self.extract_vulnerability_targets(v)
+            for t in ts:
+                self.get_vulnerability_graph().add_edge(k, t, weight=45)
+                pairs.append((k,t))
         return True
 
     def extract_vulnerability_targets(self, vuln: model.VulnerabilityInfo):
