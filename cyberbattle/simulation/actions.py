@@ -744,6 +744,9 @@ class DefenderAgentActions:
         prec = vuln.precondition
         return []
 
+    def get_vuln_adj_graph(self):
+        return nx.to_numpy_array(self.get_vulnerability_graph(), None, dtype=int)
+
     def reimage_node(self, node_id: model.NodeID, reimaging_duration = 15):
         """Re-image a computer node"""
         # Mark the node for re-imaging and make it unavailable until re-imaging completes

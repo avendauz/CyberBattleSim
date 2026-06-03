@@ -12,7 +12,7 @@ from typing import Dict, List
 from collections import Counter
 import pytest
 import networkx as nx
-
+from cyberbattle.simulation.generate_network import new_environment
 from . import model, actions
 
 ADMINTAG = model.AdminEscalation().tag
@@ -448,6 +448,10 @@ def test_vulnerablity_edge_add(actions_on_simple_environment: Fixture) -> None:
     assert defender.get_vulnerability_graph().has_edge("a", "dc")
     assert defender.get_vulnerability_graph().has_edge("a", "Sharepoint")
     assert defender.get_vulnerability_graph().has_edge("Sharepoint", "AzureResourceManager")
+
+    print(defender.get_vuln_adj_graph())
+    assert False
+
 def test_vulnerability_extraction(actions_on_simple_environment: Fixture) -> None:
     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
     vuln = NODES["a"].vulnerabilities["ListNeighbors"]
@@ -457,6 +461,13 @@ def test_vulnerability_extraction(actions_on_simple_environment: Fixture) -> Non
     vulnCred = NODES["a"].vulnerabilities["DumpCreds"]
     credTarget = defender.extract_vulnerability_targets(vulnCred)
     assert credTarget == ["Sharepoint"]
+# def test_random_network_vulnerability_graph()-> None:
+#     random_env = new_environment(50)
+#     attacker = actions.AgentActions(random_env)
+#     defender = actions.DefenderAgentActions(random_env, attacker, 10)
+#     for k, info in defender.get_vulnerability_graph():
+#         defender.identify_vulnerable_neighbour(k, info)
+
 
 # def test_identify_neighbour(actions_on_simple_environment: Fixture) -> None:
 #     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
