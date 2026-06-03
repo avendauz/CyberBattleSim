@@ -377,7 +377,6 @@ def iterate_network_nodes(network: nx.graph.Graph) -> Iterator[Tuple[NodeID, Nod
 @dataclass
 class   Environment:
     """The static graph defining the network of computers"""
-
     network: nx.DiGraph
     vulnerability_library: VulnerabilityLibrary
     identifiers: Identifiers

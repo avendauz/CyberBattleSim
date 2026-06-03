@@ -9,7 +9,7 @@ in this simulation.
 import random
 from datetime import datetime
 from typing import Dict, List
-
+from collections import Counter
 import pytest
 import networkx as nx
 
@@ -209,6 +209,12 @@ NODES = {
             )
         ),
     ),
+    "AzureResourceManager": model.NodeInfo(
+        services=[model.ListeningService("RDP"), model.ListeningService("WMI")],
+        value=100,
+        properties=list(["Windows", "Win10", "PortRDPOpen", "PortWMIOpen"]),
+        agent_installed=False,
+    ),
 }
 
 
@@ -284,7 +290,6 @@ def test_print():
     print(testPrint.list_nodes())
 
     testPrint.print_all_attacks()
-    assert False
 
 def test_list_vulnerabilities_function(actions_on_single_node_environment: Fixture, actions_on_simple_environment: Fixture) -> None:
     """
@@ -434,8 +439,33 @@ def test_check_prerequisites(actions_on_simple_environment: Fixture) -> None:
     result = actions_on_simple_environment._check_prerequisites("dc", SAMPLE_VULNERABILITIES["UACME61"])
     assert result
 
-def test_defender(actions_on_simple_environment: Fixture) -> None:
+def test_vulnerablity_edge_add(actions_on_simple_environment: Fixture) -> None:
     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
-    print(actions_on_simple_environment.list_nodes())
-    print(defender.get_vulnerable_nodes())
-    assert False
+    defender.identify_vulnerable_neighbour()
+    assert defender.get_vulnerability_graph().has_edge("a", "b")
+    assert defender.get_vulnerability_graph().has_edge("a", "c")
+    assert defender.get_vulnerability_graph().has_edge("a", "dc")
+    assert defender.get_vulnerability_graph().has_edge("a", "Sharepoint")
+    assert defender.get_vulnerability_graph().has_edge("Sharepoint", "AzureResourceManager")
+def test_vulnerability_extraction(actions_on_simple_environment: Fixture) -> None:
+    defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
+    vuln = NODES["a"].vulnerabilities["ListNeighbors"]
+    targets = defender.extract_vulnerability_targets(vuln)
+    assert len(targets) > 0
+    assert targets ==["b", "c", "dc"]
+    vulnCred = NODES["a"].vulnerabilities["DumpCreds"]
+    credTarget = defender.extract_vulnerability_targets(vulnCred)
+    assert credTarget == ["Sharepoint"]
+
+# def test_identify_neighbour(actions_on_simple_environment: Fixture) -> None:
+#     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
+
+#     vuln = NODES["a"].vulnerabilities["ListNeighbors"]
+#     assert Counter(defender.identify_vulnerable_neighbour("a")) == Counter(["b", "c", "dc", "Sharepoint"])
+
+# def test_complete_vulnerability_graph(actions_on_simple_environment: Fixture) -> None:
+#     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
+#     for i, d in defender.get_vulnerable_nodes():
+#         defender.add_vulnerable_neighbour(i)
+#     print(nx.adjacency_matrix(defender.get_vulnerability_graph()))
+#     assert False

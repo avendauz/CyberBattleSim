@@ -1,0 +1,13 @@
+#/home/avendauz/miniconda3/envs/cybersim/lib/python3.10/site-packages/ipykernel_launcher.py --f=/run/user/1000/jupyter/runtime/kernel-v39f2123c70c4692bf6a65b7d86267db7be19b169b.json
+# GMT Mon May 25 10:15:37 2026
+# 
+Website GitHubProject Website.Directory Website[user=monitor]
+Website.Directory Website Sharepoint
+Website[user=monitor] AzureResourceManager[user=monitor]
+GitHubProject AzureStorage
+AzureStorage
+Sharepoint AzureResourceManager
+AzureResourceManager AzureVM
+AzureResourceManager[user=monitor]
+AzureVM
+client Website GitHubProject AzureStorage Website.Directory Sharepoint AzureResourceManager AzureResourceManager[user=monitor]

@@ -14,6 +14,7 @@ import datetime
 from boolean import boolean
 from collections import OrderedDict
 import logging
+import copy
 from enum import Enum
 from typing import (
     Iterator,
@@ -28,7 +29,7 @@ from typing import (
 )
 from IPython.display import display
 import pandas as pd
-
+import networkx as nx
 from cyberbattle.simulation.model import (
     FirewallRule,
     MachineStatus,
@@ -99,6 +100,7 @@ class EdgeAnnotation(Enum):
     KNOWS = 0
     REMOTE_EXPLOIT = 1
     LATERAL_MOVE = 2
+
 
 
 class ActionResult(NamedTuple):
@@ -681,8 +683,11 @@ class AgentActions:
 class DefenderAgentActions:
     """Actions reserved to defender agents"""
 
-    # Number of steps it takes to completely reimage a node
-    REIMAGING_DURATION = 15
+    # # Number of steps it takes to completely reimage a node
+    # parameterize reimaging_duration for reimaging function, to allow variable reimaging costs.
+    # In OATL, there's a cost function that associates edges and joint actions to a postive natural number...
+    # REIMAGING_DURATION = 15
+    vulnerability_graph : nx.DiGraph
 
     def __init__(self, environment: model.Environment, attacker_actions: AgentActions, bound: int):
         # map nodes being reimaged to the remaining number of steps to completion
@@ -693,14 +698,15 @@ class DefenderAgentActions:
 
         self._environment = environment
         self._attacker_actions = attacker_actions
-
+        self.vulnerability_graph = copy.deepcopy(environment.network)
         # OL defines an upper-bound, natural cost n for a certain strategy
         self._defense_bound = bound
+
     @property
     def network_availability(self):
         return self.__network_availability
 
-    def get_vulnerable_nodes(self):
+    def get_vulnerable_nodes(self) -> Iterator[Tuple[model.NodeID, model.NodeInfo]]:
         """Find possible vulnerable neighbours for which an attacker can exploits in order to ensure FAILED attacks and exploits, including discovery
 
         in OATL, we assume the defender has perfect knowledge of the state in which the attacker is in, so we'll use perfect knowledge of owned nodes
@@ -708,15 +714,41 @@ class DefenderAgentActions:
 
         Perfect knowledge of CGS means we need to know all the possible transitions that could be made, which correspond to all possible plays the Attacker can make satisfying all preconditions, for certain paths taken in the attack graph
 
+        Run this after allowing the attacker to adequately discover the network.
+
         """
 
-        return self._attacker_actions.list_nodes()
+        for nodeid, nodevalue in self.get_vulnerability_graph().nodes.items():
+            node_data: model.NodeInfo = nodevalue["data"]
+            yield nodeid, node_data
 
+    def get_vulnerability_graph(self):
+        return self.vulnerability_graph
 
-    def reimage_node(self, node_id: model.NodeID):
+    def identify_vulnerable_neighbour(self):
+        pairs = []
+        for k,info in self.get_vulnerable_nodes():
+            vulns = info.vulnerabilities.items()
+            for i,v in vulns:
+                ts = self.extract_vulnerability_targets(v)
+                for t in ts:
+                    self.get_vulnerability_graph().add_edge(k, t, weight=45)
+                    pairs.append((k,t))
+        return True
+
+    def extract_vulnerability_targets(self, vuln: model.VulnerabilityInfo):
+        outcome = vuln.outcome
+        if isinstance(outcome, model.LeakedNodesId):
+            return outcome.nodes
+        if isinstance(outcome, model.LeakedCredentials):
+            return list(set(cred.node for cred in outcome.credentials))
+        prec = vuln.precondition
+        return []
+
+    def reimage_node(self, node_id: model.NodeID, reimaging_duration = 15):
         """Re-image a computer node"""
         # Mark the node for re-imaging and make it unavailable until re-imaging completes
-        self.node_reimaging_progress[node_id] = self.REIMAGING_DURATION
+        self.node_reimaging_progress[node_id] = reimaging_duration
 
         node_info = self._environment.get_node(node_id)
         assert node_info.reimagable, f"Node {node_id} is not re-imageable"
@@ -741,9 +773,12 @@ class DefenderAgentActions:
 
         # Calculate the network availability metric based on machines
         # and services that are running
-        total_node_weights = 0
-        network_node_availability = 0
-        for node_id, node_info in self._environment.nodes():
+        total_node_weights, network_node_availability = self.calculate_service(0, 0, self._environment.nodes())
+
+        self.__network_availability = network_node_availability / total_node_weights
+        assert self.__network_availability <= 1.0 and self.__network_availability >= 0.0
+    def calculate_service(self, total_node_weights, network_node_availability, nodes):
+        for node_id, node_info in nodes:
             total_service_weights = 0
             running_service_weights = 0
             for service in node_info.services:
@@ -757,9 +792,7 @@ class DefenderAgentActions:
 
             total_node_weights += node_info.sla_weight
             network_node_availability += adjusted_node_availability * node_info.sla_weight
-
-        self.__network_availability = network_node_availability / total_node_weights
-        assert self.__network_availability <= 1.0 and self.__network_availability >= 0.0
+        return total_node_weights, network_node_availability
 
     def override_firewall_rule(
         self,
