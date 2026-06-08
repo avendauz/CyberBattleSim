@@ -405,7 +405,10 @@ def create_network(nodes: Dict[NodeID, NodeInfo]) -> nx.DiGraph:
     graph.add_nodes_from([(k, {"data": v}) for (k, v) in list(nodes.items())])
     return graph
 
-
+def create_vulnerability_network(vulns: VulnerabilityLibrary) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from([(k, {"data": v}) for (k, v) in list(vulns.items())])
+    return graph
 # Helpers to infer constants from an environment
 
 

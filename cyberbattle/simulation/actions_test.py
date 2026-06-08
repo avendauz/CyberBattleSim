@@ -14,7 +14,7 @@ import pytest
 import networkx as nx
 from cyberbattle.simulation.generate_network import new_environment
 from . import model, actions
-
+import cyberbattle.samples.toyctf
 ADMINTAG = model.AdminEscalation().tag
 SYSTEMTAG = model.SystemEscalation().tag
 
@@ -439,18 +439,30 @@ def test_check_prerequisites(actions_on_simple_environment: Fixture) -> None:
     result = actions_on_simple_environment._check_prerequisites("dc", SAMPLE_VULNERABILITIES["UACME61"])
     assert result
 
+def test_defender_vuln_graph(actions_on_simple_environment: Fixture) -> None:
+    vul_env = model.Environment(
+    network=model.create_network(NODES),
+    vulnerability_library=SAMPLE_VULNERABILITIES,
+    identifiers=ENV_IDENTIFIERS,
+    creationTime=datetime.utcnow(),
+    lastModified=datetime.utcnow(),
+    )
+    defender = actions.DefenderAgentActions(vul_env, actions_on_simple_environment, 10)
+    for i, k in SAMPLE_VULNERABILITIES.items():
+        assert defender.vulnerability_graph.has_node(i)
+        assert defender.all_vulns[i] == SAMPLE_VULNERABILITIES[i]
+    assert defender.all_vulns["ScanSharepointParentDirectory"] == NODES["Sharepoint"].vulnerabilities["ScanSharepointParentDirectory"]
+    assert defender.all_vulns["DumpCreds"] == NODES["a"].vulnerabilities["DumpCreds"]
+    assert defender.all_vulns["ListNeighbors"] == NODES["a"].vulnerabilities["ListNeighbors"]
 def test_vulnerablity_edge_add(actions_on_simple_environment: Fixture) -> None:
     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
-    for k, info in defender.get_vulnerable_nodes():
-        defender.identify_vulnerable_neighbour(k,info)
+    for k, info in model.iterate_network_nodes(defender.vulnerability_graph):
+        defender.identify_vulnerable_neighbour(k)
     assert defender.get_vulnerability_graph().has_edge("a", "b")
     assert defender.get_vulnerability_graph().has_edge("a", "c")
     assert defender.get_vulnerability_graph().has_edge("a", "dc")
     assert defender.get_vulnerability_graph().has_edge("a", "Sharepoint")
     assert defender.get_vulnerability_graph().has_edge("Sharepoint", "AzureResourceManager")
-
-    print(defender.get_vuln_adj_graph())
-    assert False
 
 def test_vulnerability_extraction(actions_on_simple_environment: Fixture) -> None:
     defender = actions.DefenderAgentActions(ENV, actions_on_simple_environment, 10)
@@ -461,6 +473,21 @@ def test_vulnerability_extraction(actions_on_simple_environment: Fixture) -> Non
     vulnCred = NODES["a"].vulnerabilities["DumpCreds"]
     credTarget = defender.extract_vulnerability_targets(vulnCred)
     assert credTarget == ["Sharepoint"]
+
+def test_all_vulnerability_extraction(actions_on_simple_environment: Fixture) -> None:
+    vul_env = model.Environment(
+    network=model.create_network(NODES),
+    vulnerability_library=SAMPLE_VULNERABILITIES,
+    identifiers=ENV_IDENTIFIERS,
+    creationTime=datetime.utcnow(),
+    lastModified=datetime.utcnow(),
+    )
+    defender = actions.DefenderAgentActions(vul_env, actions_on_simple_environment, 10)
+    assert len(defender.all_vulns) == 4
+    defender1 = actions.DefenderAgentActions(vul_env, actions_on_simple_environment, 10)
+    print(defender.all_vulns)
+    assert defender.all_vulns == defender1.all_vulns
+
 # def test_random_network_vulnerability_graph()-> None:
 #     random_env = new_environment(50)
 #     attacker = actions.AgentActions(random_env)

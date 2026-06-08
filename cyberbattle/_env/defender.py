@@ -11,7 +11,17 @@ from abc import abstractmethod
 from cyberbattle.simulation.model import Environment
 from cyberbattle.simulation.actions import DefenderAgentActions
 from ..simulation import model
-
+from typing import (
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Dict,
+    TypedDict,
+    cast,
+)
 import logging
 
 
@@ -30,7 +40,13 @@ class Demon(DefenderAgent):
     if we alter preconditions like leaked-nodes id, will this prevent the attacker to access it?
 
     """
-    def step(self, environment: Environment, actions: DefenderAgentActions, t: int):
+
+
+
+    def __init__(self, threshold_cost):
+        self.threshold_cost = threshold_cost
+
+    def step(self, environment: Environment, actions: DefenderAgentActions):
         logging.info("This is the demon")
 
 class ScanAndReimageCompromisedMachines(DefenderAgent):

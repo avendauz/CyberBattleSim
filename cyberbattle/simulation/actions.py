@@ -39,7 +39,7 @@ from cyberbattle.simulation.model import (
     VulnerabilityType,
 )
 from . import model
-
+import itertools
 
 logger = logging.getLogger(__name__)
 Reward = float
@@ -679,6 +679,10 @@ class AgentActions:
         """Pretty print list of all possible attacks from all the nodes currently owned by the attacker"""
         display(pd.DataFrame.from_dict(self.list_all_attacks()).set_index("id"))  # type: ignore
 
+class VulnerabilityGraphStateData:
+    owned_nodes: List[model.NodeID]
+    state_vuln: model.VulnerabilityInfo
+    known_properties: List[model.PropertyName]
 
 class DefenderAgentActions:
     """Actions reserved to defender agents"""
@@ -694,44 +698,38 @@ class DefenderAgentActions:
         self.node_reimaging_progress: Dict[model.NodeID, int] = dict()
 
         # Last calculated availability of the network
-        self.__network_availability: float = 1.0
+        self._network_availability: float = 1.0
 
         self._environment = environment
         self._attacker_actions = attacker_actions
-        self.vulnerability_graph = copy.deepcopy(environment.network)
+        self.vulnerability_graph = model.create_vulnerability_network(environment.vulnerability_library)
         # OL defines an upper-bound, natural cost n for a certain strategy
         self._defense_bound = bound
-
+        self.all_vulns : model.VulnerabilityLibrary = self.collect_all_node_vulnerabilities(environment.nodes()) | environment.vulnerability_library
+        self.countermeasures : Dict[model.VulnerabilityID, int]= dict({})
+        # Assume all properties hold? Or all properties hold for a given vulnerability, so properties need to be accummulated
     @property
     def network_availability(self):
         return self.__network_availability
 
-    def get_vulnerable_nodes(self) -> Iterator[Tuple[model.NodeID, model.NodeInfo]]:
-        """Find possible vulnerable neighbours for which an attacker can exploits in order to ensure FAILED attacks and exploits, including discovery
+    def collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
+        vulns = dict({})
+        for i, n in nodes:
+            for v_id, v in n.vulnerabilities.items():
+                vulns[v_id] = v
+        return vulns
 
-        in OATL, we assume the defender has perfect knowledge of the state in which the attacker is in, so we'll use perfect knowledge of owned nodes
-
-
-        Perfect knowledge of CGS means we need to know all the possible transitions that could be made, which correspond to all possible plays the Attacker can make satisfying all preconditions, for certain paths taken in the attack graph
-
-        Run this after allowing the attacker to adequately discover the network.
-
-        """
-
-        for nodeid, nodevalue in self.get_vulnerability_graph().nodes.items():
-            node_data: model.NodeInfo = nodevalue["data"]
-            yield nodeid, node_data
 
     def get_vulnerability_graph(self):
         return self.vulnerability_graph
 
-    def identify_vulnerable_neighbour(self, k, info):
+    def identify_vulnerable_neighbour(self, k: model.NodeInfo):
         pairs = []
-        vulns = info.vulnerabilities.items()
-        for i,v in vulns:
-            ts = self.extract_vulnerability_targets(v)
+        node_vulns = k.vulnerabilities
+        for i,v in self.all_vulns.items():
+            ts = self.extract_vulnerability_targets(v) # Use for calculating edge weight?
+            self.vulnerability_graph.add_edge(i, t, weight=45)
             for t in ts:
-                self.get_vulnerability_graph().add_edge(k, t, weight=45)
                 pairs.append((k,t))
         return True
 
@@ -741,7 +739,7 @@ class DefenderAgentActions:
             return outcome.nodes
         if isinstance(outcome, model.LeakedCredentials):
             return list(set(cred.node for cred in outcome.credentials))
-        prec = vuln.precondition
+        # prec = vuln.precondition TODO: check preconditions satisfied by properties, not required?
         return []
 
     def get_vuln_adj_graph(self):
@@ -775,11 +773,11 @@ class DefenderAgentActions:
 
         # Calculate the network availability metric based on machines
         # and services that are running
-        total_node_weights, network_node_availability = self.calculate_service(0, 0, self._environment.nodes())
+        total_node_weights, network_node_availability = self.__calculate_service(0, 0, self._environment.nodes())
 
         self.__network_availability = network_node_availability / total_node_weights
         assert self.__network_availability <= 1.0 and self.__network_availability >= 0.0
-    def calculate_service(self, total_node_weights, network_node_availability, nodes):
+    def __calculate_service(self, total_node_weights, network_node_availability, nodes):
         for node_id, node_info in nodes:
             total_service_weights = 0
             running_service_weights = 0
