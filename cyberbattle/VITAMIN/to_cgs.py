@@ -24,7 +24,7 @@ from typing import (
     TypedDict,
     cast,
 )
-
+from abc import ABC, abstractmethod
 import os
 
 EXPORT_DIR = "vit-models"
@@ -34,7 +34,10 @@ class VITAMINDefender:
     Chosen representation of the CGS
     """
     graph: nx.DiGraph
-
+    strat: List[str] # state labels for removal
+    def __init__(self) -> None:
+        self.graph = nx.DiGraph()
+        self.strat = []
     def export_to_vitamin(self, filename):
         """
         Write to file adjacency matrix in VITAMIN format (space-delimited)
@@ -51,9 +54,65 @@ class VITAMINDefender:
             for row in graph_array:
                 f.write(' '.join(map(str, row)) + '\n')
 
-    def inject_vitamin_strategy(self):
+    def inject_vitamin_strategy(self) -> None:
         pass
 
-class VulCGS:
-    def __init__(self, env: model.Environment, attacker: actions.AgentActions, defender: actions.DefenderAgentActions) -> None:
+
+class VITAMINDefenderBuilder(ABC):
+    """
+    Interface for generating VITAMIN Defender
+    """
+    @abstractmethod
+    def apply_strat(self):
+        """For use for injecting strategies, by dictating removal"""
         pass
+
+    @abstractmethod
+    def add_states(self):
+        pass
+
+    @abstractmethod
+    def add_weighted_edges(self):
+        pass
+
+    @abstractmethod
+    def generate_defender(self) -> VITAMINDefender:
+        """Final call to insantiate Vitamin Defender"""
+        pass
+
+
+class VulCGSBuilder(VITAMINDefenderBuilder):
+    """
+    VulCGS is a builder for VITAMINDefender that constructs a CGS with:
+
+    Nodes corresponding to all the possible vulnerabilities defined in union of global vulnerability list and node-specific vulnerabilities
+
+    Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
+    """
+    def __init__(self, env: model.Environment) -> None:
+        self.reset()
+        self._env = env
+
+        self._vulns = self._collect_all_node_vulnerabilities(env.nodes()) | env.vulnerability_library
+
+    def _collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
+        vulns = dict({})
+        for _, n in nodes:
+            for v_id, v in n.vulnerabilities.items():
+                vulns[v_id] = v
+        return vulns
+
+    def reset(self):
+        self._defender = VITAMINDefender()
+
+    def add_states(self):
+        return self
+
+    def add_weighted_edges(self):
+        return self
+
+    def apply_strat(self):
+        return self
+
+    def generate_defender(self) -> VITAMINDefender:
+        return self._defender
