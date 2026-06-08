@@ -35,6 +35,7 @@ class VITAMINDefender:
     """
     graph: nx.DiGraph
     strat: List[str] # state labels for removal
+    initial_state: str
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
         self.strat = []
@@ -77,7 +78,7 @@ class VITAMINDefenderBuilder(ABC):
 
     @abstractmethod
     def generate_defender(self) -> VITAMINDefender:
-        """Final call to insantiate Vitamin Defender"""
+        """Final call to instantiate Vitamin Defender"""
         pass
 
 
@@ -106,6 +107,7 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
         self._defender = VITAMINDefender()
 
     def add_states(self):
+        self._defender.graph.add_nodes_from([(k, {"data": v}) for (k, v) in list(self._vulns.items())])
         return self
 
     def add_weighted_edges(self):

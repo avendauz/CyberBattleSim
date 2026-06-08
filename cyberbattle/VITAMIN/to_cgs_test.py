@@ -103,6 +103,44 @@ NODES = {
         agent_installed=False,
     ),
 }
+ADMINTAG = model.AdminEscalation().tag
+SYSTEMTAG = model.SystemEscalation().tag
+
+GLOBAL_VULNERABILITIES = {
+    "UACME61": model.VulnerabilityInfo(
+        description="UACME UAC bypass #61",
+        type=model.VulnerabilityType.LOCAL,
+        URL="https://github.com/hfiref0x/UACME",
+        precondition=model.Precondition(f"Windows&Win10&(~({ADMINTAG}|{SYSTEMTAG}))"),
+        outcome=model.AdminEscalation(),
+        rates=model.Rates(0, 0.2, 1.0),
+    ),
+    "UACME67": model.VulnerabilityInfo(
+        description="UACME UAC bypass #67 (fake system escalation) ",
+        type=model.VulnerabilityType.LOCAL,
+        URL="https://github.com/hfiref0x/UACME",
+        precondition=model.Precondition(f"Windows&Win10&(~({ADMINTAG}|{SYSTEMTAG}))"),
+        outcome=model.SystemEscalation(),
+        rates=model.Rates(0, 0.2, 1.0),
+    ),
+    "MimikatzLogonpasswords": model.VulnerabilityInfo(
+        description="Mimikatz sekurlsa::logonpasswords.",
+        type=model.VulnerabilityType.LOCAL,
+        URL="https://github.com/gentilkiwi/mimikatz",
+        precondition=model.Precondition(f"Windows&({ADMINTAG}|{SYSTEMTAG})"),
+        outcome=model.LeakedCredentials([]),
+        rates=model.Rates(0, 1.0, 1.0),
+    ),
+    "RDPBF": model.VulnerabilityInfo(
+        description="RDP Brute Force",
+        type=model.VulnerabilityType.REMOTE,
+        URL="https://attack.mitre.org/techniques/T1110/",
+        precondition=model.Precondition("Windows&PortRDPOpen"),
+        outcome=model.LateralMove(),
+        rates=model.Rates(0, 0.2, 1.0),
+        cost=1.0,
+    ),
+}
 
 ENV_IDENTIFIERS = model.infer_constants_from_nodes(cast(Iterator[Tuple[model.NodeID, model.NodeInfo]], list(NODES.items())), dict([]))
 
@@ -125,7 +163,7 @@ def simple_env() -> model.Environment:
     env = model.Environment(
         network=model.create_network(NODES),
         version=model.VERSION_TAG,
-        vulnerability_library=dict([]),
+        vulnerability_library=GLOBAL_VULNERABILITIES,
         identifiers=ENV_IDENTIFIERS,
         creationTime=datetime.now(timezone.utc),
         lastModified=datetime.now(timezone.utc),
@@ -145,19 +183,22 @@ def test_empty_builder(simple_env: model.Environment) -> None:
     assert defender.graph.edges == init_graph.edges
 
 
-def test_invalid_edge(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env)
-                .add_states()
-                .add_weighted_edges()
-                .generate_defender()
-                )
-
-def test_defender_vuln_graph(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env)
-                .add_states()
-                .add_weighted_edges()
-                )
+def test_defender_vulns(simple_env: model.Environment) -> None:
+    defender = (to_cgs.VulCGSBuilder(simple_env))
 
     assert defender._vulns["ScanSharepointParentDirectory"] == NODES["Sharepoint"].vulnerabilities["ScanSharepointParentDirectory"]
     assert defender._vulns["DumpCreds"] == NODES["a"].vulnerabilities["DumpCreds"]
     assert defender._vulns["ListNeighbors"] == NODES["a"].vulnerabilities["ListNeighbors"]
+    for i, k in GLOBAL_VULNERABILITIES.items():
+        assert defender._vulns[i] == k
+
+def test_add_states(simple_env: model.Environment) -> None:
+    defender = (to_cgs.VulCGSBuilder(simple_env)
+                .add_states()
+                .generate_defender()
+                )
+    assert defender.graph.has_node("ScanSharepointParentDirectory")
+    assert defender.graph.has_node("DumpCreds")
+    assert defender.graph.has_node("ListNeighbors")
+    for i, _ in GLOBAL_VULNERABILITIES.items():
+        assert defender.graph.has_node(i)
