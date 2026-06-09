@@ -36,6 +36,7 @@ class VITAMINDefender:
     graph: nx.DiGraph
     strat: List[str] # state labels for removal
     initial_state: str
+    acc_properties_indices: Set[str]
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
         self.strat = []
@@ -87,7 +88,9 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
     """
     VulCGS is a builder for VITAMINDefender that constructs a CGS with:
 
-    Nodes corresponding to all the possible vulnerabilities defined in union of global vulnerability list and node-specific vulnerabilities
+    Nodes corresponding to all the possible vulnerabilities defined in union of global vulnerability list and node-specific vulnerabilities. We eventually can associate atomic propositions with preventing these vulnerabilities, and expand beyond this according to certain node properties.
+
+    TODO: export node_properties to support AP generation...
 
     Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
     """
