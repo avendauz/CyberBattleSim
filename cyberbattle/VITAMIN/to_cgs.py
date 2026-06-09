@@ -27,7 +27,7 @@ from typing import (
 from abc import ABC, abstractmethod
 import os
 import cyberbattle.VITAMIN.countermeasures as countermeasures
-EXPORT_DIR = "vit-models"
+EXPORT_DIR = "cyberbattle/VITAMIN/vit-models"
 
 class VITAMINDefender:
     """
@@ -51,7 +51,7 @@ class VITAMINDefender:
         """
         states = self.graph.nodes()
         graph_array = nx.to_numpy_array(self.graph, None, dtype=int)
-
+        # TODO: parse complete VITAMIN-compatible format
         with open(f"{os.getcwd()}/{EXPORT_DIR}/{filename}", 'w') as f:
             for row in graph_array:
                 f.write(' '.join(map(str, row)) + '\n')
@@ -98,12 +98,29 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
         self._vulns = self._collect_all_node_vulnerabilities(env.nodes()) | env.vulnerability_library
 
         self._countermeasure_costs = dict([(k, countermeasure_fn(vuln)) for k, vuln in self._vulns.items()])
+
     def _collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
         vulns = dict({})
         for _, n in nodes:
             for v_id, v in n.vulnerabilities.items():
                 vulns[v_id] = v
         return vulns
+
+    def _extra_states(self):
+        pass
+
+    def _extract_vulnerability_targets(self, vuln: model.VulnerabilityInfo):
+        outcome = vuln.outcome
+        if isinstance(outcome, model.LeakedNodesId):
+            return outcome.nodes
+        if isinstance(outcome, model.LeakedCredentials):
+            return list(set(cred.node for cred in outcome.credentials))
+        # prec = vuln.precondition TODO: check preconditions satisfied by properties, not required?
+        return []
+
+    def _extract_outcome_targets(self):
+        pass
+
 
     def reset(self):
         self._defender = VITAMINDefender()
@@ -113,6 +130,12 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
         return self
 
     def add_weighted_edges(self):
+
+        for id, vuln in self._vulns.items():
+            targets = self._extract_vulnerability_targets(vuln)
+            possible_vulns = [id for id, vuln in self._vulns.items() for t in targets if id in self._env.get_node(t).vulnerabilities.keys()]
+            for pos_vuln in possible_vulns:
+                self._defender.graph.add_edge(id, pos_vuln, weight=self._countermeasure_costs[id])
         return self
 
     def apply_strat(self):
