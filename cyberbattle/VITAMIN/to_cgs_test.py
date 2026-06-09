@@ -16,6 +16,7 @@ from typing import (
 )
 import networkx as nx
 import cyberbattle.VITAMIN.countermeasures as cm
+import cyberbattle.simulation.generate_network as gn
 NODES = {
     "a": model.NodeInfo(
         services=[
@@ -218,6 +219,22 @@ def test_initial_state(simple_env: model.Environment) -> None:
                 .generate_defender())
     assert defender.initial_state == initial_state
 
+"""
+PropertyCGSBuilder tests
+
+"""
+@pytest.fixture
+def complex_env() -> model.Environment:
+
+    env = gn.new_environment(20)
+    return env
+
+def test_props(complex_env: model.Environment):
+    defender = (
+        to_cgs.PropertyCGSBuilder(complex_env)
+    )
+    print(defender._props)
+    assert False
 
 """
 VITAMINDefender tests

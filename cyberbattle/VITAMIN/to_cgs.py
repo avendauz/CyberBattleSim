@@ -130,6 +130,16 @@ class VITAMINDefenderBuilder(ABC):
         pass
 
 class PropertyCGSBuilder(VITAMINDefenderBuilder):
+    """
+    Representation based on pre-post conditions
+
+    States labeled by properties and preconditions that enable certain edges?
+    Edges imply a certain exploit
+    APs can be centred around certain properties and preconditions
+
+    The state should track the attacker's knowledge base, including currently owned nodes, known properties.
+
+    """
     def __init__(self, env: model.Environment):
         self.reset()
         self._env = env
