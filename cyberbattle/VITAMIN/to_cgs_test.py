@@ -176,7 +176,7 @@ Unit tests for VulCGSBuilder
 """
 
 def test_empty_builder(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
+    defender = (to_cgs.VulCGSBuilder(simple_env)
                 .generate_defender()
                 )
     init_graph = nx.DiGraph()
@@ -185,7 +185,7 @@ def test_empty_builder(simple_env: model.Environment) -> None:
 
 
 def test_defender_vulns(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3)))
+    defender = (to_cgs.VulCGSBuilder(simple_env))
 
     assert defender._vulns["ScanSharepointParentDirectory"] == NODES["Sharepoint"].vulnerabilities["ScanSharepointParentDirectory"]
     assert defender._vulns["DumpCreds"] == NODES["a"].vulnerabilities["DumpCreds"]
@@ -194,7 +194,7 @@ def test_defender_vulns(simple_env: model.Environment) -> None:
         assert defender._vulns[i] == k
 
 def test_add_states(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
+    defender = (to_cgs.VulCGSBuilder(simple_env)
                 .add_states()
                 .generate_defender()
                 )
@@ -205,15 +205,15 @@ def test_add_states(simple_env: model.Environment) -> None:
         assert defender.graph.has_node(i)
 
 def test_add_weighted_edges(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
+    defender = (to_cgs.VulCGSBuilder(simple_env)
                 .add_states()
-                .add_weighted_edges()
+                .add_weighted_edges(cm.ArbitraryCost(3))
                 .generate_defender())
     assert defender.graph.has_edge("DumpCreds", "ScanSharepointParentDirectory")
 
 def test_initial_state(simple_env: model.Environment) -> None:
     initial_state = "DumpCreds"
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
+    defender = (to_cgs.VulCGSBuilder(simple_env)
                 .specify_initial_state(initial_state)
                 .generate_defender())
     assert defender.initial_state == initial_state
@@ -224,9 +224,9 @@ VITAMINDefender tests
 """
 
 def test_export_to_vitamin(simple_env: model.Environment):
-    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ReimagingCountermeasure(simple_env))
+    defender = (to_cgs.VulCGSBuilder(simple_env)
                 .add_states()
-                .add_weighted_edges()
+                .add_weighted_edges(cm.ReimagingCountermeasure(simple_env))
                 .generate_defender())
     print("SHOULD BE EXPORTING")
     #defender.export_to_vitamin("temp.txt")

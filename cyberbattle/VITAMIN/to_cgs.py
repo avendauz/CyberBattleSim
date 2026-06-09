@@ -129,6 +129,32 @@ class VITAMINDefenderBuilder(ABC):
         """Final call to instantiate Vitamin Defender"""
         pass
 
+class PropertyCGSBuilder(VITAMINDefenderBuilder):
+    def __init__(self, env: model.Environment):
+        self.reset()
+        self._env = env
+        self._props = env.identifiers.properties
+
+    def reset(self):
+        self._defender = VITAMINDefender()
+
+    def apply_strat(self):
+        """For use for injecting strategies, by dictating removal"""
+        pass
+
+    def add_states(self):
+        pass
+
+    def specify_initial_state(self):
+        pass
+
+
+    def add_weighted_edges(self):
+        pass
+
+    def generate_defender(self):
+        pass
+
 
 class VulCGSBuilder(VITAMINDefenderBuilder):
     """
@@ -140,12 +166,11 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
 
     Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
 
-    Best for small, manual networks with a workable list of vulnerabilities.
+    Best for small, manual networks with a workable list of vulnerabilities. Only applies for one-toone relationship between vulnerabilities and nodes, not sufficient for large topologies with repeated vulnerabilities.
     """
-    def __init__(self, env: model.Environment, countermeasure_calc) -> None:
+    def __init__(self, env: model.Environment) -> None:
         self.reset()
         self._env = env
-        self._countermeasure_calc = countermeasure_calc
         self._vulns = self._collect_all_node_vulnerabilities(env.nodes()) | env.vulnerability_library
 
         # self._countermeasure_costs = dict([(k, countermeasure_fn(vuln)) for k, vuln in self._vulns.items()])
@@ -184,7 +209,7 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
         self._defender.initial_state = vuln
         return self
 
-    def add_weighted_edges(self):
+    def add_weighted_edges(self, countermeasure_calc):
 
         for id, vuln in self._vulns.items():
             targets = self._extract_vulnerability_targets(vuln)
@@ -192,7 +217,7 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
             possible_vulns = [id for id, vuln in self._vulns.items() for t in targets if id in self._env.get_node(t).vulnerabilities.keys()]
 
             for pos_vuln in possible_vulns:
-                self._defender.graph.add_edge(id, pos_vuln, weight=self._countermeasure_calc.calculate_cost(id))
+                self._defender.graph.add_edge(id, pos_vuln, weight=countermeasure_calc.calculate_cost(id))
         return self
 
     def apply_strat(self):
