@@ -693,7 +693,7 @@ class DefenderAgentActions:
     # REIMAGING_DURATION = 15
     vulnerability_graph : nx.DiGraph
 
-    def __init__(self, environment: model.Environment, attacker_actions: AgentActions, bound: int):
+    def __init__(self, environment: model.Environment):
         # map nodes being reimaged to the remaining number of steps to completion
         self.node_reimaging_progress: Dict[model.NodeID, int] = dict()
 
@@ -701,49 +701,18 @@ class DefenderAgentActions:
         self._network_availability: float = 1.0
 
         self._environment = environment
-        self._attacker_actions = attacker_actions
-        self.vulnerability_graph = model.create_vulnerability_network(environment.vulnerability_library)
-        # OL defines an upper-bound, natural cost n for a certain strategy
-        self._defense_bound = bound
-        self.all_vulns : model.VulnerabilityLibrary = self.collect_all_node_vulnerabilities(environment.nodes()) | environment.vulnerability_library
-        self.countermeasures : Dict[model.VulnerabilityID, int]= dict({})
-        # Assume all properties hold? Or all properties hold for a given vulnerability, so properties need to be accummulated
+
     @property
     def network_availability(self):
         return self.__network_availability
 
-    def collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
-        vulns = dict({})
-        for i, n in nodes:
-            for v_id, v in n.vulnerabilities.items():
-                vulns[v_id] = v
-        return vulns
+    # def collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
+    #     vulns = dict({})
+    #     for i, n in nodes:
+    #         for v_id, v in n.vulnerabilities.items():
+    #             vulns[v_id] = v
+    #     return vulns
 
-
-    def get_vulnerability_graph(self):
-        return self.vulnerability_graph
-
-    def identify_vulnerable_neighbour(self, k: model.NodeInfo):
-        pairs = []
-        node_vulns = k.vulnerabilities
-        for i,v in self.all_vulns.items():
-            ts = self.extract_vulnerability_targets(v) # Use for calculating edge weight?
-            self.vulnerability_graph.add_edge(i, t, weight=45)
-            for t in ts:
-                pairs.append((k,t))
-        return True
-
-    def extract_vulnerability_targets(self, vuln: model.VulnerabilityInfo):
-        outcome = vuln.outcome
-        if isinstance(outcome, model.LeakedNodesId):
-            return outcome.nodes
-        if isinstance(outcome, model.LeakedCredentials):
-            return list(set(cred.node for cred in outcome.credentials))
-        # prec = vuln.precondition TODO: check preconditions satisfied by properties, not required?
-        return []
-
-    def get_vuln_adj_graph(self):
-        return nx.to_numpy_array(self.get_vulnerability_graph(), None, dtype=int)
 
     def reimage_node(self, node_id: model.NodeID, reimaging_duration = 15):
         """Re-image a computer node"""

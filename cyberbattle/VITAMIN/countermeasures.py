@@ -16,6 +16,7 @@ class ArbitraryCost(CountermeasureCalculator):
 
     def __init__(self, cost) -> None:
         self._fixed_cost = cost
+
     def calculate_cost(self):
         return lambda _ : self._fixed_cost
 
@@ -27,7 +28,7 @@ class TotalDisruption(CountermeasureCalculator):
     def __init__(self, env: model.Environment) -> None:
         self._env = env
 
-    def calculate_cost(self):
+    def calculate_cost():
         return self.__calculate_service(0, 0, self._env.nodes())
 
     def __calculate_service(self, total_node_weights, network_node_availability, nodes):
