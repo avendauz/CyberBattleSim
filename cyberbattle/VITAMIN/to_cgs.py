@@ -94,13 +94,13 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
 
     Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
     """
-    def __init__(self, env: model.Environment, countermeasure_fn = countermeasures.ArbitraryCost(3).calculate_cost()) -> None:
+    def __init__(self, env: model.Environment, countermeasure_calc) -> None:
         self.reset()
         self._env = env
-
+        self._countermeasure_calc = countermeasure_calc
         self._vulns = self._collect_all_node_vulnerabilities(env.nodes()) | env.vulnerability_library
 
-        self._countermeasure_costs = dict([(k, countermeasure_fn(vuln)) for k, vuln in self._vulns.items()])
+        # self._countermeasure_costs = dict([(k, countermeasure_fn(vuln)) for k, vuln in self._vulns.items()])
 
     def _collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
         vulns = dict({})
@@ -136,9 +136,11 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
 
         for id, vuln in self._vulns.items():
             targets = self._extract_vulnerability_targets(vuln)
+
             possible_vulns = [id for id, vuln in self._vulns.items() for t in targets if id in self._env.get_node(t).vulnerabilities.keys()]
+
             for pos_vuln in possible_vulns:
-                self._defender.graph.add_edge(id, pos_vuln, weight=self._countermeasure_costs[id])
+                self._defender.graph.add_edge(id, pos_vuln, weight=self._countermeasure_calc.calculate_cost(id))
         return self
 
     def apply_strat(self):

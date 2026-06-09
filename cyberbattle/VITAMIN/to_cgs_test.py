@@ -15,6 +15,7 @@ from typing import (
     cast,
 )
 import networkx as nx
+import cyberbattle.VITAMIN.countermeasures as cm
 NODES = {
     "a": model.NodeInfo(
         services=[
@@ -175,7 +176,7 @@ Unit tests for VulCGSBuilder
 """
 
 def test_empty_builder(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env)
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
                 .generate_defender()
                 )
     init_graph = nx.DiGraph()
@@ -184,7 +185,7 @@ def test_empty_builder(simple_env: model.Environment) -> None:
 
 
 def test_defender_vulns(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env))
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3)))
 
     assert defender._vulns["ScanSharepointParentDirectory"] == NODES["Sharepoint"].vulnerabilities["ScanSharepointParentDirectory"]
     assert defender._vulns["DumpCreds"] == NODES["a"].vulnerabilities["DumpCreds"]
@@ -193,7 +194,7 @@ def test_defender_vulns(simple_env: model.Environment) -> None:
         assert defender._vulns[i] == k
 
 def test_add_states(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env)
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
                 .add_states()
                 .generate_defender()
                 )
@@ -204,7 +205,7 @@ def test_add_states(simple_env: model.Environment) -> None:
         assert defender.graph.has_node(i)
 
 def test_add_weighted_edges(simple_env: model.Environment) -> None:
-    defender = (to_cgs.VulCGSBuilder(simple_env)
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
                 .add_states()
                 .add_weighted_edges()
                 .generate_defender())
@@ -215,10 +216,9 @@ VITAMINDefender tests
 """
 
 def test_export_to_vitamin(simple_env: model.Environment):
-    defender = (to_cgs.VulCGSBuilder(simple_env)
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ReimagingCountermeasure(simple_env))
                 .add_states()
                 .add_weighted_edges()
                 .generate_defender())
-    #defender.export_to_vitamin("temp.txt")
-    print(defender.graph.nodes())
-    assert False
+    print("SHOULD BE EXPORTING")
+    defender.export_to_vitamin("temp.txt")
