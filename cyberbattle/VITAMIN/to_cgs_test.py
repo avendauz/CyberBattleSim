@@ -1,5 +1,5 @@
 import pytest
-from . import to_cgs
+import cyberbattle.VITAMIN.to_cgs as to_cgs
 import cyberbattle.simulation.actions as actions
 import cyberbattle.simulation.model as model
 from datetime import datetime, timezone
@@ -202,3 +202,10 @@ def test_add_states(simple_env: model.Environment) -> None:
     assert defender.graph.has_node("ListNeighbors")
     for i, _ in GLOBAL_VULNERABILITIES.items():
         assert defender.graph.has_node(i)
+
+# def test_add_weighted_edges(simple_env: model.Environment) -> None:
+#     defender = (to_cgs.VulCGSBuilder(simple_env)
+#                 .add_states()
+#                 .add_weighted_edges()
+#                 .generate_defender())
+#     assert defender.graph.has_edge("ScanSharepointParentDirectory")

@@ -26,7 +26,7 @@ from typing import (
 )
 from abc import ABC, abstractmethod
 import os
-
+import cyberbattle.VITAMIN.countermeasures as countermeasures
 EXPORT_DIR = "vit-models"
 
 class VITAMINDefender:
@@ -49,6 +49,7 @@ class VITAMINDefender:
         0 0 1
 
         """
+        states = self.graph.nodes()
         graph_array = nx.to_numpy_array(self.graph, None, dtype=int)
 
         with open(f"{os.getcwd()}/{EXPORT_DIR}/{filename}", 'w') as f:
@@ -90,12 +91,13 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
 
     Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
     """
-    def __init__(self, env: model.Environment) -> None:
+    def __init__(self, env: model.Environment, countermeasure_fn = countermeasures.ArbitraryCost(3).calculate_cost()) -> None:
         self.reset()
         self._env = env
 
         self._vulns = self._collect_all_node_vulnerabilities(env.nodes()) | env.vulnerability_library
 
+        self._countermeasure_costs = dict([(k, countermeasure_fn(vuln)) for k, vuln in self._vulns.items()])
     def _collect_all_node_vulnerabilities(self, nodes: Iterator[Tuple[model.NodeID, model.NodeInfo]]) -> model.VulnerabilityLibrary:
         vulns = dict({})
         for _, n in nodes:
