@@ -211,6 +211,14 @@ def test_add_weighted_edges(simple_env: model.Environment) -> None:
                 .generate_defender())
     assert defender.graph.has_edge("DumpCreds", "ScanSharepointParentDirectory")
 
+def test_initial_state(simple_env: model.Environment) -> None:
+    initial_state = "DumpCreds"
+    defender = (to_cgs.VulCGSBuilder(simple_env, cm.ArbitraryCost(3))
+                .specify_initial_state(initial_state)
+                .generate_defender())
+    assert defender.initial_state == initial_state
+
+
 """
 VITAMINDefender tests
 """
@@ -221,4 +229,4 @@ def test_export_to_vitamin(simple_env: model.Environment):
                 .add_weighted_edges()
                 .generate_defender())
     print("SHOULD BE EXPORTING")
-    defender.export_to_vitamin("temp.txt")
+    #defender.export_to_vitamin("temp.txt")

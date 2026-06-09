@@ -44,18 +44,59 @@ class VITAMINDefender:
         """
         Write to file adjacency matrix in VITAMIN format (space-delimited)
         i.e. for nodes a -> b -> c and each node has a self loop:
-
+        TODO: Add header transition with costs
         1 1 0
         0 1 1
         0 0 1
+
+        # DESCRIPTION: Two agents; costs on actions. Traces are verified under cost
+        # bounds; properties must hold within those bounds.
+
+        Transition_With_Costs
+        0 2 3 0 0 0
+        0 0 2 1 0 0
+        0 3 0 1 4 0
+        0 0 0 0 3 5
+        0 0 0 4 0 6
+        0 0 0 0 0 *
+
+        Name_State
+        s0 s1 s2 s3 s4 s5
+        Initial_State
+        s0
+        Atomic_propositions
+        goal safe
+        Labelling
+        0 0
+        1 0
+        0 0
+        1 0
+        0 0
+        1 1
+        Number_of_agents
+        2
+
 
         """
         states = self.graph.nodes()
         graph_array = nx.to_numpy_array(self.graph, None, dtype=int)
         # TODO: parse complete VITAMIN-compatible format
         with open(f"{os.getcwd()}/{EXPORT_DIR}/{filename}", 'w') as f:
+            f.write("Transition_With_Costs" + '\n')
             for row in graph_array:
                 f.write(' '.join(map(str, row)) + '\n')
+
+            f.write("Name_State" + '\n')
+            f.write(' '.join(self.get_cgs_states()))
+
+            f.write("Initial_State" + '\n')
+            f.write(self.get_initial_state())
+
+            f.write("Number_of_agents" + '\n' + "2")
+    def get_cgs_states(self):
+        return list(self.graph.nodes().keys())
+    def get_initial_state(self):
+        return self.initial_state
 
     def inject_vitamin_strategy(self) -> None:
         pass
@@ -73,6 +114,11 @@ class VITAMINDefenderBuilder(ABC):
     @abstractmethod
     def add_states(self):
         pass
+
+    @abstractmethod
+    def specify_initial_state(self):
+        pass
+
 
     @abstractmethod
     def add_weighted_edges(self):
@@ -93,6 +139,8 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
     TODO: export node_properties to support AP generation...
 
     Edges correspond to executing an exploit resulting in a certain outcome (defined in model.VulnerabilityOutcomes). The weights of the edge correspond to the countermeasure for that exploit, which is up to the discretion of the design (network_availability effect by reimaging target nodes, complete removal of vulnerability etc.)
+
+    Best for small, manual networks with a workable list of vulnerabilities.
     """
     def __init__(self, env: model.Environment, countermeasure_calc) -> None:
         self.reset()
@@ -130,6 +178,10 @@ class VulCGSBuilder(VITAMINDefenderBuilder):
 
     def add_states(self):
         self._defender.graph.add_nodes_from([(k, {"data": v}) for (k, v) in list(self._vulns.items())])
+        return self
+
+    def specify_initial_state(self, vuln: model.VulnerabilityID):
+        self._defender.initial_state = vuln
         return self
 
     def add_weighted_edges(self):

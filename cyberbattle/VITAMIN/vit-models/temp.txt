@@ -1,11 +1,10 @@
-0 0 0 0 0 0 9 0 0 0 0
-0 0 0 9 9 0 0 0 0 0 0
-0 0 0 0 0 9 0 0 0 0 0
-8 8 8 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 8 0 0
-0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 7 0 0 0
-0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 6 0
-0 0 0 0 0 0 0 0 0 0 0
-6 6 6 0 0 0 0 0 0 0 0
+Transition_With_Costs
+0 0 0 0 0 0 0
+0 0 5 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+Name_State
+ListNeighbors DumpCreds ScanSharepointParentDirectory UACME61 UACME67 MimikatzLogonpasswords RDPBF

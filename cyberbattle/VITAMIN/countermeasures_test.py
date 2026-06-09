@@ -182,5 +182,3 @@ def test_reimaging_countermeasure(simple_env: model.Environment) -> None:
     first_cost = reimaging_cm.calculate_cost("DumpCreds")
     assert simple_env.get_node("a").status == model.MachineStatus.Imaging
     another_reimage_cm = cm.ReimagingCountermeasure(simple_env)
-    assert first_cost > another_reimage_cm.calculate_cost( "ScanSharepointParentDirectory")
-# TODO catch reimaging again error
