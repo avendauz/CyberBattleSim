@@ -254,7 +254,7 @@ def cyberbattle_model_from_traffic_graph(
     for node in list(graph.nodes):
         if node != entry_node_id:
             node_data = graph.nodes[node]["data"]
-            node_data.vulnerabilities = (node)
+            node_data.vulnerabilities = create_vulnerabilities_from_traffic_data(node)
             graph.nodes[node].update({"data": node_data})
 
     # remove all the edges inherited from the network graph

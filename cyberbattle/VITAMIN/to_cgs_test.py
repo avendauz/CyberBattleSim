@@ -246,4 +246,25 @@ def test_export_to_vitamin(simple_env: model.Environment):
                 .add_weighted_edges(cm.ReimagingCountermeasure(simple_env))
                 .generate_defender())
     print("SHOULD BE EXPORTING")
-    #defender.export_to_vitamin("temp.txt")
+    #defender.export_to_vitamin("temp.txt")VulnerabilityOutcomes
+def test_export_complex_env(complex_env: model.Environment):
+    defender = (
+        to_cgs.VulCGSBuilder(complex_env)
+                .specify_initial_state("0")
+                .add_states()
+                .add_weighted_edges(cm.ReimagingCountermeasure(complex_env))
+                .generate_defender()
+
+    )
+    defender.export_to_vitamin("complex.txt")
+    assert False
+# print("Testing file")
+# defender = (
+#         to_cgs.VulCGSBuilder(complex_env())
+#                 .specify_initial_state("0")
+#                 .add_states()
+#                 .add_weighted_edges(cm.ReimagingCountermeasure(complex_env()))
+#                 .generate_defender()
+
+#     )
+# defender.export_to_vitamin("complex.txt")

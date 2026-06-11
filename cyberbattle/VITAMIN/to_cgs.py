@@ -87,10 +87,10 @@ class VITAMINDefender:
                 f.write(' '.join(map(str, row)) + '\n')
 
             f.write("Name_State" + '\n')
-            f.write(' '.join(self.get_cgs_states()))
+            f.write(' '.join(self.get_cgs_states()) + '\n')
 
             f.write("Initial_State" + '\n')
-            f.write(self.get_initial_state())
+            f.write(self.get_initial_state() + '\n')
 
             f.write("Number_of_agents" + '\n' + "2")
     def get_cgs_states(self):
@@ -137,7 +137,12 @@ class PropertyCGSBuilder(VITAMINDefenderBuilder):
     Edges imply a certain exploit
     APs can be centred around certain properties and preconditions
 
+    Postconditions are given by the VulnerabilityOutcome types
+
+
+
     The state should track the attacker's knowledge base, including currently owned nodes, known properties.
+
 
     """
     def __init__(self, env: model.Environment):
